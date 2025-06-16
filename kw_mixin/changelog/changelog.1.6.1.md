@@ -1,0 +1,4 @@
+- Updated documentation style to match generic_condition module
+- Added badges and improved README structure
+- Added detailed usage examples for all mixins
+- Created changelog files in proper directory
