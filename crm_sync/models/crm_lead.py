@@ -5,10 +5,23 @@ from odoo.tools.safe_eval import datetime
 
 _logger = logging.getLogger(__name__)
 
+class ResUser(models.Model):
+    _inherit = 'res.users'
+    external_user_id = fields.Integer( string="External User ID", copy=False)
+    external_user_name = fields.Char( string="External User Name", copy=False)
+
+    # (constrain for external_user_name,external_user_id unique)
+    _sql_constraints = [
+        ('external_user_name_unique', 'unique(external_user_name)', 'The external user name must be unique!'),
+        ('external_user_id_unique', 'unique(external_user_id)', 'The external user ID must be unique!'),
+    ]
+
+
 class CrmLead(models.Model):
     _inherit = 'crm.lead'
     external_id = fields.Integer("External ID")
-
+    external_user_id = fields.Integer(string="External User ID", )
+    external_user_name = fields.Char(string="External User Name", )
     is_external_request = fields.Boolean(string="External Request",)
 
     def _get_peer_url(self):
@@ -26,8 +39,13 @@ class CrmLead(models.Model):
             lead = super().create(vals)
 
             try:
+                user = self.env['res.users'].browse(vals.get('user_id', self.env.uid))
+                external_user_id = user.external_user_id if user else None
+                external_user_name = user.external_user_name if user else None
                 vals["is_external_request"] = True
                 vals["external_id"] = lead.id
+                vals["external_user_id"] = external_user_id
+                vals["external_user_name"] = external_user_name
                 payload = vals
                 peer_url = self._get_peer_url()
                 # remove field 'date_open' from vals

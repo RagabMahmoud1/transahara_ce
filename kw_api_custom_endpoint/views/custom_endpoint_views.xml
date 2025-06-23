@@ -47,6 +47,13 @@
                         <field name="domain" widget="domain"
                                options="{'model': 'model_model'}"/>
                     </group>
+
+                    <div>
+                        <button name="action_populate_fields"
+                                type="object"
+                                string="Get Model Fields"
+                                class="oe_highlight"/>
+                    </div>
                     <notebook>
                         <page string="Fields" attrs="{'invisible': [('kind','!=', 'fields')]}">
                             <field name="field_ids">

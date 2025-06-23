@@ -86,6 +86,75 @@ class CustomEndpoint(models.Model):
     logs_count = fields.Integer(string='Logs count',
                                 compute='_compute_logs_count')
 
+    def action_populate_fields(self):
+        for endpoint in self:
+            if not endpoint.model_id:
+                raise UserError(_("Please select a Model first."))
+
+            # Set default API flags
+            endpoint.write({
+                'is_token_required': False,
+                'is_api_key_required': False,
+                'is_json_required': False,
+                'is_list_enabled': True,
+                'is_get_enabled': True,
+                'is_create_enabled': True,
+                'is_update_enabled': True,
+                'is_delete_enabled': True,
+            })
+
+            # Clear existing field lines
+            endpoint.field_ids.unlink()
+
+            # Get all fields (including inherited ones)
+            model_fields = self.env['ir.model.fields'].search([
+                ('model', '=', endpoint.model_id.model), ('compute', '=', False)
+            ])
+
+            fields_vals = []
+            for field in model_fields:
+                related_model = field.relation if field.ttype in ['one2many'] else False
+                data_endpoint = False
+
+                if related_model:
+                    # Search for existing endpoint by model string
+                    data_endpoint = self.env['kw.api.custom.endpoint'].search([
+                        ('model_id.model', '=', related_model)
+                    ], limit=1)
+
+                    if not data_endpoint:
+                        related_model_rec = self.env['ir.model'].search([
+                            ('model', '=', related_model)
+                        ], limit=1)
+
+                        if related_model_rec:
+                            existing_by_id = self.env['kw.api.custom.endpoint'].search([
+                                ('model_id', '=', related_model_rec.id)
+                            ], limit=1)
+
+                            if not existing_by_id:
+                                data_endpoint = self.env['kw.api.custom.endpoint'].create({
+                                    'model_id': related_model_rec.id,
+                                    'name': related_model_rec.name,
+                                    'api_name': related_model_rec.model,
+                                })
+                                data_endpoint.action_populate_fields()
+                            else:
+                                data_endpoint = existing_by_id
+
+                vals = {
+                    'model_field_id': field.id,
+                    'endpoint_id': endpoint.id,
+                    'is_changeable': field.ttype not in ['one2many', 'many2many'],
+                    'is_searchable': field.ttype in ['char', 'selection', 'text', 'html'],
+                    'outbound_api_name': field.name,
+                    'inbound_api_name': field.name,
+                    'data_endpoint_id': data_endpoint.id if data_endpoint else False,
+                }
+                fields_vals.append(vals)
+
+            self.env['kw.api.custom.endpoint.field'].create(fields_vals)
+
     def _compute_logs_count(self):
         for rec in self:
             rec.logs_count = self.env['kw.api.log'].search_count(

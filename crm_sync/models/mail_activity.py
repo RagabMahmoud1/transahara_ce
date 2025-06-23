@@ -24,6 +24,8 @@ class MailActivity(models.Model):
 
     external_id = fields.Integer("External ID", help="ID of the activity in the external system")
     is_external_request = fields.Boolean(string="External Request", help="Indicates if this activity was created from an external request")
+    external_user_id = fields.Integer(string="External User ID")
+    external_user_name = fields.Char(string="External User Name")
 
     def _get_peer_url(self):
         base_url = self.env['ir.config_parameter'].sudo().get_param('crm_sync.peer_url')
@@ -33,6 +35,10 @@ class MailActivity(models.Model):
     def create(self, vals):
         if vals.get('is_external_request', False) == False:
             activity = super().create(vals)
+            user = self.env.user
+            external_user_id = user.external_user_id if user else None
+            external_user_name = user.external_user_name if user else None
+
             if activity.res_model == 'crm.lead':
                 lead_id = self.env['crm.lead'].browse(activity.res_id)
                 if lead_id and lead_id.external_id:
@@ -41,6 +47,8 @@ class MailActivity(models.Model):
             try:
                 vals["is_external_request"] = True
                 vals["external_id"] = activity.id
+                vals["external_user_id"] = external_user_id
+                vals["external_user_name"] = external_user_name
 
                 payload = vals
                 peer_url = self._get_peer_url()
@@ -57,7 +65,20 @@ class MailActivity(models.Model):
             return activity
         else:
             vals["is_external_request"] = False
-            return super().create(vals)
+            user = vals.get('user_id', 0)
+            ex_user = vals.get('external_user_id', 0)
+            if ex_user and ex_user != 0:
+                us = self.env['res.users'].browse(ex_user)
+                vals['create_uid'] = us
+
+            if user and user != 0:
+                uus = self.env['res.users'].browse(user)
+                vals['user_id'] = uus
+
+            lead_id = self.env['crm.lead'].browse(vals.get('res_id', False))
+            vals['res_model_id'] = self.env['ir.model']._get('crm.lead').id if lead_id else False
+            ac = super().create(vals)
+            return ac
 
     def write(self, vals):
         if vals.get('is_external_request', False) == False:

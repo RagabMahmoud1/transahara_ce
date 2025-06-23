@@ -4,10 +4,9 @@
     'summary': 'Sync CRM leads between Odoo Community and Enterprise',
     'description': 'Bidirectional synchronization of CRM leads between two Odoo instances',
     'author': 'Marwah Adel',
-    'depends': ['crm','kw_api','kw_api_custom_endpoint', 'mail'],
+    'depends': ['crm','kw_api','kw_api_custom_endpoint', 'mail', 'hr'],
     'data': [
-                # 'security/ir.model.access.csv',
-
+        'views/lead.xml'
     ],
     'installable': True,
     'application': False,
