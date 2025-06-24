@@ -35,6 +35,11 @@ class CrmLead(models.Model):
 
     @api.model
     def create(self, vals):
+        is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
+        if not is_auto_sync:
+            vals["is_external_request"] = False
+            return super().create(vals)
+
         if vals.get('is_external_request', False) == False:
             lead = super().create(vals)
 
@@ -76,6 +81,11 @@ class CrmLead(models.Model):
 
     def write(self, vals):
 
+        is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
+        if not is_auto_sync:
+            vals["is_external_request"] = False
+            return super().write(vals)
+
         if vals.get('is_external_request', False) == False:
             res = super().write(vals)
 
@@ -104,6 +114,10 @@ class CrmLead(models.Model):
             return res1
 
     def unlink(self):
+        is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
+        if not is_auto_sync:
+            return super().unlink()
+
         external_ids = self.mapped('external_id')
         if not external_ids:
             return super().unlink()

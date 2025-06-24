@@ -75,6 +75,7 @@ class MailActivity(models.Model):
                 uus = self.env['res.users'].browse(user)
                 vals['user_id'] = uus
 
+
             lead_id = self.env['crm.lead'].browse(vals.get('res_id', False))
             vals['res_model_id'] = self.env['ir.model']._get('crm.lead').id if lead_id else False
             ac = super().create(vals)
