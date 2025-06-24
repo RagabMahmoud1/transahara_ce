@@ -8,14 +8,14 @@
 
             <xpath expr="//div[@name='convert_visitor_setting_container']" position="inside">
                 <div class="col-lg-6 o_setting_box">
-<!--                    <div class="o_setting_left_pane">-->
-<!--                        <field name="is_auto_sync"/>-->
-<!--                    </div>-->
+                    <div class="o_setting_left_pane">
+                        <field name="is_auto_sync"/>
+                    </div>
 
-<!--                    <div class="o_setting_right_pane" id="field__auto_sync">-->
-<!--                        <label string="Auto Sync" for="is_auto_sync"/>-->
+                    <div class="o_setting_right_pane" id="field__auto_sync">
+                        <label string="Auto Sync" for="is_auto_sync"/>
 
-<!--                    </div>-->
+                    </div>
                 </div>
             </xpath>
         </field>
