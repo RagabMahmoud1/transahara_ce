@@ -37,7 +37,7 @@ class CrmLead(models.Model):
     def create(self, vals):
         is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
         if not is_auto_sync:
-            vals["is_external_request"] = False
+            vals["is_external_request"] = True
             return super().create(vals)
 
         if vals.get('is_external_request', False) == False:
@@ -75,7 +75,7 @@ class CrmLead(models.Model):
 
             return lead
         else:
-            vals["is_external_request"]= False
+            vals["is_external_request"] = True
             lead1 = super().create(vals)
             return lead1
 
@@ -83,7 +83,7 @@ class CrmLead(models.Model):
 
         is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
         if not is_auto_sync:
-            vals["is_external_request"] = False
+            vals["is_external_request"] = True
             return super().write(vals)
 
         if vals.get('is_external_request', False) == False:
@@ -108,7 +108,7 @@ class CrmLead(models.Model):
         else:
             # If this is an external request, we should not sync back to the peer.
             # Just remove the flag for future writes.
-            vals["is_external_request"] = False
+            vals["is_external_request"] = True
             res1 = super().write(vals)
 
             return res1
@@ -125,6 +125,9 @@ class CrmLead(models.Model):
         res = super().unlink()
         self.env.cr.commit()
         for ext_id in external_ids:
+            if not ext_id or ext_id <= 0:
+                _logger.warning(f"Skipping unlink for invalid external ID: {ext_id}")
+                continue
             peer_url = f"{self._get_peer_url()}/{ext_id}"
             external_lead = requests.get(peer_url)
             if external_lead.status_code != 200:
