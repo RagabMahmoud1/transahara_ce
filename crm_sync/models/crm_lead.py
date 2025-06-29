@@ -30,6 +30,7 @@ class CrmLead(models.Model):
         Adjust this logic based on your deployment environment.
         """
         base_url = self.env['ir.config_parameter'].sudo().get_param('crm_sync.peer_url')
+        _logger.debug(f"Peer URL from config: {base_url}")
         return base_url or 'http://localhost:8069/kw_api/custom/crm.lead'  # fallback
 
 
