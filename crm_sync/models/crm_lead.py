@@ -30,8 +30,8 @@ class CrmLead(models.Model):
         Adjust this logic based on your deployment environment.
         """
         base_url = self.env['ir.config_parameter'].sudo().get_param('crm_sync.peer_url')
-        _logger.debug(f"Peer URL from config: {base_url}")
-        return base_url or 'http://localhost:8069/kw_api/custom/crm.lead'  # fallback
+        _logger.warning(f"Peer URL from config: {base_url}")
+        return base_url or False
 
 
     @api.model
@@ -54,6 +54,7 @@ class CrmLead(models.Model):
                 vals["external_user_name"] = external_user_name
                 payload = vals
                 peer_url = self._get_peer_url()
+                _logger.warning(f"Peer URL from config: {peer_url}")
                 # remove field 'date_open' from vals
                 if 'date_open' in payload:
                     del payload['date_open']
