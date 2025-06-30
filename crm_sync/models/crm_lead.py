@@ -50,11 +50,14 @@ class CrmLead(models.Model):
                 external_user_name = user.external_user_name if user else None
                 vals["is_external_request"] = True
                 vals["external_id"] = lead.id
-                vals["external_user_id"] = external_user_id
-                vals["external_user_name"] = external_user_name
+                vals["external_user_id"] = user.id
+                # vals["external_user_name"] = external_user_name
                 payload = vals
+                # update payload with user_id = external_user_id
+                if external_user_id:
+                    payload['user_id'] = external_user_id
                 peer_url = self._get_peer_url()
-                _logger.warning(f"Peer URL from config: {peer_url}")
+                _logger.warning(f"payload: {payload}")
                 # remove field 'date_open' from vals
                 if 'date_open' in payload:
                     del payload['date_open']
