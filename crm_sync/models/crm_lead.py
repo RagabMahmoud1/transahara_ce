@@ -95,7 +95,7 @@ class ResPartner(models.Model):
             return res
         else:
             vals["is_external_request"] = True
-            res1 = super().write(vals)
+            res1 = super().sudo().write(vals)
             return res1
 
     def unlink(self):
@@ -242,7 +242,7 @@ class CrmLead(models.Model):
             # If this is an external request, we should not sync back to the peer.
             # Just remove the flag for future writes.
             vals["is_external_request"] = True
-            res1 = super().write(vals)
+            res1 = super().sudo().write(vals)
 
             return res1
 
