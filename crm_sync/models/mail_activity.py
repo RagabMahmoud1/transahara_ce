@@ -6,6 +6,20 @@ from odoo.tools.safe_eval import datetime
 _logger = logging.getLogger(__name__)
 from datetime import date, datetime
 
+# class PortalWizardUser(models.TransientModel):
+#     """
+#         A model to configure users in the portal wizard.
+#     """
+#
+#     _inherit = 'portal.wizard.user'
+#
+#     message_subscription = fields.Boolean(
+#         string="Message Subscription",
+#         help="Subscribe to messages for this user in the portal.",
+#         default=True,
+#     )
+
+
 class MailActivity(models.Model):
     _inherit = 'mail.activity'
 
