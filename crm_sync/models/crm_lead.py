@@ -23,6 +23,9 @@ class ResPartner(models.Model):
     external_user_id = fields.Integer(string="External User ID", copy=False)
     external_user_name = fields.Char(string="External User Name", copy=False)
     is_external_request = fields.Boolean(string="External Request", )
+    is_external_request_create = fields.Boolean(string="External Request create", )
+    is_external_request_write = fields.Boolean(string="External Request write", )
+    is_external_request_unlink = fields.Boolean(string="External Request unlink", )
 
     def _get_peer_url(self):
         base_url = self.env['ir.config_parameter'].sudo().get_param('crm_sync.peer_url')
@@ -32,17 +35,17 @@ class ResPartner(models.Model):
     def create(self, vals):
         is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
         if not is_auto_sync:
-            vals["is_external_request"] = True
+            vals["is_external_request_create"] = True
             return super().create(vals)
 
-        if vals.get('is_external_request', False) == False:
+        if vals.get('is_external_request_create', False) == False:
             partner = super().create(vals)
 
             try:
                 user = self.env['res.users'].browse(vals.get('user_id', self.env.uid))
                 external_user_id = user.external_user_id if user else None
                 external_user_name = user.external_user_name if user else None
-                vals["is_external_request"] = True
+                vals["is_external_request_create"] = True
                 vals["external_id"] = partner.id
                 vals["external_user_id"] = user.id
                 payload = vals
@@ -58,7 +61,7 @@ class ResPartner(models.Model):
                         partner.write(
                             {
                                 'external_id': response_data['content']['id'],
-                                'is_external_request': True,
+                                'is_external_request_create': True,
                             }
                         )
             except Exception as e:
@@ -66,63 +69,67 @@ class ResPartner(models.Model):
 
             return partner
         else:
-            vals["is_external_request"] = True
+            vals["is_external_request_create"] = True
             partner1 = super().create(vals)
             return partner1
 
     def write(self, vals):
         is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
+
         if not is_auto_sync:
-            vals["is_external_request"] = True
+            vals["is_external_request_write"] = True
             return super().write(vals)
 
-        if vals.get('is_external_request', False) == False:
+        if vals.get('is_external_request_write', False) == False and not vals.get('is_external_request_create', False):
             res = super().write(vals)
 
             for partner in self:
                 payload = {}
+                external_id = partner.external_id if partner.external_id else False
+                if not external_id:
+                    _logger.warning(f"Skipping write for partner {partner.id} with no external ID.")
+                    continue
                 for key, value in vals.items():
                     if isinstance(value, datetime.datetime):
                         payload[key] = value.isoformat()
                     else:
                         payload[key] = value
                 payload["external_id"] = partner.id
-                payload["is_external_request"] = True
+                payload["is_external_request_write"] = True
+
                 peer_url = f"{self._get_peer_url()}/{partner.external_id}"
                 e_partner = requests.post(peer_url, json=payload)
                 _logger.info(f"Sync Response (write): {e_partner.status_code} - {e_partner.text}")
 
             return res
         else:
-            vals["is_external_request"] = True
-            res1 = super().sudo().write(vals)
-            return res1
+            return super().write(vals)
 
     def unlink(self):
-        is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
-        if not is_auto_sync:
-            return super().unlink()
-
-        external_ids = self.mapped('external_id')
-        if not external_ids:
-            return super().unlink()
-
-        res = super().unlink()
-        self.env.cr.commit()
-        for ext_id in external_ids:
-            if not ext_id or ext_id <= 0:
-                _logger.warning(f"Skipping unlink for invalid external ID: {ext_id}")
+        self = self.sudo()
+        for partner in self:
+            if not partner.external_id or partner.external_id <= 0:
+                _logger.warning(f"Skipping unlink for partner {partner.id} with invalid external ID.")
                 continue
-            peer_url = f"{self._get_peer_url()}/{ext_id}"
+
+            is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
+            if not is_auto_sync:
+                return super().unlink()
+            peer_url = f"{self._get_peer_url()}/{partner.external_id}"
             external_partner = requests.get(peer_url)
             if external_partner.status_code != 200:
-                _logger.error(f"Failed to fetch partner with external ID {ext_id}: {external_partner.text}")
+                _logger.error(f"Failed to fetch partner with external ID {partner.external_id}: {external_partner.text}")
                 continue
-            requests.delete(peer_url)
-            _logger.info(f"Sync Response (unlink): {external_partner.status_code} - {external_partner.text}")
 
+            writ = requests.post(peer_url, json={'is_external_request_unlink': True, 'external_id': False})
+            response = requests.delete(peer_url)
+
+            response_text = response.text if response.text else "No content"
+
+            _logger.info(f"Sync Response (unlink): {response.status_code} - {response_text}")
+
+        res = super(ResPartner, self).unlink()
         return res
-
 
 
 class CrmLead(models.Model):
@@ -131,6 +138,9 @@ class CrmLead(models.Model):
     external_user_id = fields.Integer(string="External User ID", )
     external_user_name = fields.Char(string="External User Name", )
     is_external_request = fields.Boolean(string="External Request",)
+    is_external_request_create = fields.Boolean(string="External Request create", )
+    is_external_request_write = fields.Boolean(string="External Request write", )
+    is_external_request_unlink = fields.Boolean(string="External Request unlink", )
 
     def _get_peer_url(self):
         """
@@ -146,17 +156,17 @@ class CrmLead(models.Model):
     def create(self, vals):
         is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
         if not is_auto_sync:
-            vals["is_external_request"] = True
+            vals["is_external_request_create"] = True
             return super().create(vals)
 
-        if vals.get('is_external_request', False) == False:
+        if vals.get('is_external_request_create', False) == False:
             lead = super().create(vals)
 
             try:
                 user = self.env['res.users'].browse(vals.get('user_id', self.env.uid))
                 external_user_id = user.external_user_id if user else None
                 external_user_name = user.external_user_name if user else None
-                vals["is_external_request"] = True
+                vals["is_external_request_create"] = True
                 vals["external_id"] = lead.id
                 vals["external_user_id"] = user.id
                 vals["external_user_name"] = external_user_name
@@ -191,7 +201,7 @@ class CrmLead(models.Model):
                     del payload['date_open']
                 response = requests.post(peer_url, json=payload)
                 _logger.info(f"Sync Response (create): {response.status_code} - {response.text}")
-                # response.text = '{"content": {"id": 57, "write_date": "06/16/2025 16:52:24", "contact_name": "", "display_name": "Test EE 9", "partner_name": "", "mobile": "", "external_id": 60, "is_external_request": false, "name": "Test EE 9", "phone": ""}, "code": "200"}'
+
                 # get id from the content from response text
                 if response.status_code == 200:
                     response_data = response.json()
@@ -199,7 +209,7 @@ class CrmLead(models.Model):
                         lead.write(
                             {
                                 'external_id': response_data['content']['id'],
-                                'is_external_request': True,
+                                'is_external_request_create': True,
                              }
 
                         )
@@ -208,7 +218,7 @@ class CrmLead(models.Model):
 
             return lead
         else:
-            vals["is_external_request"] = True
+            vals["is_external_request_create"] = True
             lead1 = super().create(vals)
             return lead1
 
@@ -216,10 +226,10 @@ class CrmLead(models.Model):
 
         is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
         if not is_auto_sync:
-            vals["is_external_request"] = True
+            vals["is_external_request_write"] = True
             return super().write(vals)
 
-        if vals.get('is_external_request', False) == False:
+        if vals.get('is_external_request_write', False) == False  and not vals.get('is_external_request_create', False):
             res = super().write(vals)
 
             for lead in self:
@@ -230,7 +240,7 @@ class CrmLead(models.Model):
                     else:
                         payload[key] = value
                 payload["external_id"] = lead.id
-                payload["is_external_request"] = True
+                payload["is_external_request_write"] = True
                 peer_url = f"{self._get_peer_url()}/{lead.external_id}"
                 if 'date_open' in payload:
                     del payload['date_open']
@@ -241,32 +251,31 @@ class CrmLead(models.Model):
         else:
             # If this is an external request, we should not sync back to the peer.
             # Just remove the flag for future writes.
-            vals["is_external_request"] = True
-            res1 = super().sudo().write(vals)
-
-            return res1
+            vals["is_external_request_write"] = True
+            return super().write(vals)
 
     def unlink(self):
-        is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
-        if not is_auto_sync:
-            return super().unlink()
-
-        external_ids = self.mapped('external_id')
-        if not external_ids:
-            return super().unlink()
-
-        res = super().unlink()
-        self.env.cr.commit()
-        for ext_id in external_ids:
-            if not ext_id or ext_id <= 0:
-                _logger.warning(f"Skipping unlink for invalid external ID: {ext_id}")
+        self = self.sudo()
+        for lead in self:
+            if not lead.external_id or lead.external_id <= 0:
+                _logger.warning(f"Skipping unlink for lead {lead.id} with invalid external ID.")
                 continue
-            peer_url = f"{self._get_peer_url()}/{ext_id}"
+
+            is_auto_sync = self.env['ir.config_parameter'].sudo().get_param('crm_sync.auto_sync')
+            if not is_auto_sync:
+                return super().unlink()
+
+            peer_url = f"{self._get_peer_url()}/{lead.external_id}"
             external_lead = requests.get(peer_url)
             if external_lead.status_code != 200:
-                _logger.error(f"Failed to fetch lead with external ID {ext_id}: {external_lead.text}")
+                _logger.error(f"Failed to fetch lead with external ID {lead.external_id}: {external_lead.text}")
                 continue
-            requests.delete(peer_url)
-            _logger.info(f"Sync Response (unlink): {external_lead.status_code} - {external_lead.text}")
 
+            writ = requests.post(peer_url, json={'is_external_request_unlink': True, 'external_id': False})
+            response = requests.delete(peer_url)
+
+            response_text = response.text if response.text else "No content"
+            _logger.info(f"Sync Response (unlink): {response.status_code} - {response_text}")
+
+        res = super(CrmLead, self).unlink()
         return res

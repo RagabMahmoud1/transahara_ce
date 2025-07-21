@@ -95,7 +95,7 @@ class CustomEndpoint(models.Model):
             endpoint.write({
                 'is_token_required': False,
                 'is_api_key_required': False,
-                'is_json_required': False,
+                'is_json_required': True,
                 'is_list_enabled': True,
                 'is_get_enabled': True,
                 'is_create_enabled': True,
