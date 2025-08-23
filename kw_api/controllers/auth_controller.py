@@ -22,7 +22,7 @@ class AuthController(http.Controller):
             raise KwApiError('auth_error', 'Wrong login / password',
                              'wrong login {}'.format(login))
         password = kw_api.get_data_param_by_name('password', str)
-        db = request.env.cr.dbname
+        db = kw_api.get_data_param_by_name('db', str)
         try:
             request.env['res.users'].sudo().check(db, user.id, password)
         except Exception as e:
@@ -48,3 +48,4 @@ class AuthController(http.Controller):
         kw_api.token.unlink()
         return kw_api.ok_response(
             message=_('Token has been successfully deleted'))
+

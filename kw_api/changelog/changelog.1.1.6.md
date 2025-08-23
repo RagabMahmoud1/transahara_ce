@@ -1,1 +1,0 @@
-adds call_clear_logs

@@ -4,3 +4,9 @@ class ResConfigSettings(models.TransientModel):
     _inherit = 'res.config.settings'
 
     is_auto_sync = fields.Boolean(string='Auto Sync', readonly=False, config_parameter="crm_sync.auto_sync")
+
+
+class ResUsers(models.Model):
+    _inherit = 'res.users'
+
+    external_ref = fields.Char("External Reference", copy=False, index=True)

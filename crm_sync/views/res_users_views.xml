@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="rgb_res_users_form" model="ir.ui.view">
+        <field name="name">res.users.form (rgb)</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="external data">
+                    <group>
+                        <field name="external_user_id" />
+                        <field name="external_user_name" />
+                        <field name="external_user_login" />
+                        <field name="external_user_password" password="True" widget="password"/>
+                        <field name="external_employee_id" />
+                        <field name="external_employee_name" />
+                        <field name="external_token" readonly="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

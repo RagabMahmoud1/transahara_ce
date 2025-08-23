@@ -431,9 +431,9 @@ class CustomEndpoint(models.Model):
             if obj_id:
                 obj_id = m.search(
                     [(self.model_id_field, '=', obj_id)], limit=1)
-                obj_id.write(data)
+                obj_id.with_context(from_remote_sync=True).write(data)
             else:
-                obj_id = m.create(data)
+                obj_id = m.with_context(from_remote_sync=True).create(data)
         except psycopg2.IntegrityError as e:
             self._cr.rollback()
             return kw_api.response(
@@ -455,7 +455,7 @@ class CustomEndpoint(models.Model):
         try:
             obj_id = m.search(
                 [(self.model_id_field, '=', obj_id)], limit=1)
-            obj_id.unlink()
+            obj_id.with_context(from_remote_sync=True).unlink()
         except Exception as e:
             return kw_api.response(
                 code=400, error=e, data={'error': {

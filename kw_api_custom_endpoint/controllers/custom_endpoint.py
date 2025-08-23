@@ -45,16 +45,40 @@ class CustomEndpointController(http.Controller):
                 return KwApi().response(
                     code=403, error='403: Wrong API key', data={'error': {
                         'code': '403', 'message': '403: Wrong API key'}}, )
-
         if endpoint.is_token_required:
-            if not kw_api.token:
+            token_str = request.httprequest.headers.get("Authorization")
+            if not token_str or not token_str.startswith("Bearer "):
                 return KwApi().response(
-                    code=403, error='403: Missed true token', data={'error': {
-                        'code': '403', 'message': '403: Missed true token'}}, )
-            if kw_api.token and kw_api.token.is_expired:
+                    code=403, error="403: Missing Authorization header", data={
+                        "error": {"code": "403", "message": "Missing Authorization"}
+                    })
+            token_str = token_str.split(" ")[1]
+
+            token = request.env["kw.api.token"].sudo().search([
+                ("name", "=", token_str),
+            ], limit=1)
+
+            if not token:
                 return KwApi().response(
-                    code=403, error='403: Token is expired', data={'error': {
-                        'code': '403', 'message': '403: Token is expired'}}, )
+                    code=403, error="403: Invalid token", data={
+                        "error": {"code": "403", "message": "Invalid token"}
+                    })
+
+            if token.is_expired:
+                return KwApi().response(
+                    code=403, error="403: Token expired", data={
+                        "error": {"code": "403", "message": "Token expired"}
+                    })
+
+        # if endpoint.is_token_required:
+        #     if not kw_api.token:
+        #         return KwApi().response(
+        #             code=403, error='403: Missed true token', data={'error': {
+        #                 'code': '403', 'message': '403: Missed true token'}}, )
+        #     if kw_api.token and kw_api.token.is_expired:
+        #         return KwApi().response(
+        #             code=403, error='403: Token is expired', data={'error': {
+        #                 'code': '403', 'message': '403: Token is expired'}}, )
 
         if request.httprequest.method == 'POST':
             if obj_id and not endpoint.is_update_enabled:
