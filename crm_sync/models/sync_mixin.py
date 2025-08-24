@@ -114,7 +114,7 @@ class SyncMixin(models.AbstractModel):
             elif method == "POST":
                 res = requests.post(url, headers=headers, json=payload or {})
             elif method == "PUT":
-                res = requests.put(url, headers=headers, json=payload or {})
+                res = requests.post(url, headers=headers, json=payload or {})
             elif method == "DELETE":
                 res = requests.delete(url, headers=headers)
             else:
@@ -131,7 +131,7 @@ class SyncMixin(models.AbstractModel):
                     elif method == "POST":
                         res = requests.post(url, headers=headers, json=payload or {})
                     elif method == "PUT":
-                        res = requests.put(url, headers=headers, json=payload or {})
+                        res = requests.post(url, headers=headers, json=payload or {})
                     elif method == "DELETE":
                         res = requests.delete(url, headers=headers)
 
@@ -162,11 +162,11 @@ class SyncMixin(models.AbstractModel):
             vals["external_ref"] = record.id  # Ensure no external_ref is sent on create
 
             result = record._sync_call_remote("POST", self._name, vals)
-            if result and "id" in result:
+            if result and "content" in result and "id" in result["content"]:
                 # record.external_ref = result["id"]
                 record.with_context(from_remote_sync=True).write({
-                    "external_ref": result["id"],
-                    "external_id": result["id"],
+                    "external_ref": result["content"]["id"],
+                    "external_id": result["content"]["id"],
                     "external_employee_id": vals["external_employee_id"],
                     "external_employee_name": vals["external_employee_name"],
                 })

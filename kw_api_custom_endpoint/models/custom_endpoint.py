@@ -271,7 +271,7 @@ class CustomEndpoint(models.Model):
         return self.env['kw.api.alien'].api_get_field_value(
             rec, field_name, api_name, **kw)
 
-    def data_response(self, kw_api, data=False, **kw):
+    def data_response(self, kw_api, data=False, user=None, **kw):
         self.ensure_one()
         total_elements = len(data)
 
@@ -294,7 +294,10 @@ class CustomEndpoint(models.Model):
                 'totalPages': total_pages,
                 'numberOfElements': number_of_elements,
                 'number': kw_api.page_index,
-                'last': (total_pages - kw_api.page_index) <= 0, }
+                'last': (total_pages - kw_api.page_index) <= 0,
+                "external_employee_name": user.external_employee_name if user else None,
+                "external_employee_id": user.external_employee_id if user else None,
+            }
         else:
             data = {'content': data, 'code': '200'}
 
@@ -456,12 +459,8 @@ class CustomEndpoint(models.Model):
                 code=400, error=e, data={'error': {
                     'code': '400', 'message': e}}, )
         kw_api.paginate = False
-        res_data = self.data_response(kw_api, obj_id)
-        if user:
-            res_data['user'] = {
-                                'id': user.id, 'name': user.name, 'login': user.login, "external_employee_id": user.external_employee_id,
-                                "external_employee_name": user.external_employee_name,
-                                }
+        res_data = self.data_response(kw_api, obj_id, user=user)
+
         return res_data
 
     def delete(self, kw_api, obj_id=False, **kw):
