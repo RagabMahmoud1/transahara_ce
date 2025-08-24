@@ -424,8 +424,9 @@ class CustomEndpoint(models.Model):
             if user:
                 remote_env = odoo.api.Environment(
                     request.env.cr, user.id, request.env.context)
-
-        m = remote_env[self.model_id.model].sudo()
+        if not remote_env:
+            remote_env = self.env
+        m = remote_env[self.model_id.model].sudo() if remote_env else self.env[self.model_id.model].sudo()
         try:
             kw_api.data = json.loads(request.httprequest.data.decode('utf-8'))
         except Exception as e:
@@ -455,7 +456,13 @@ class CustomEndpoint(models.Model):
                 code=400, error=e, data={'error': {
                     'code': '400', 'message': e}}, )
         kw_api.paginate = False
-        return self.data_response(kw_api, obj_id)
+        res_data = self.data_response(kw_api, obj_id)
+        if user:
+            res_data['user'] = {
+                                'id': user.id, 'name': user.name, 'login': user.login, "external_employee_id": user.external_employee_id,
+                                "external_employee_name": user.external_employee_name,
+                                }
+        return res_data
 
     def delete(self, kw_api, obj_id=False, **kw):
         self.ensure_one()

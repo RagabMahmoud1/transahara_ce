@@ -8,7 +8,7 @@ class SyncMixin(models.AbstractModel):
     _name = "sync.mixin"
     _description = "Remote Sync Mixin"
 
-    external_ref = fields.Char("External Reference", copy=False, index=True)
+    external_ref = fields.Integer("External Reference", copy=False, index=True)
     external_id = fields.Integer("External ID")
     external_employee_id = fields.Integer("External Employee ID")
     external_employee_name = fields.Char("External Employee Name", copy=False)
@@ -86,6 +86,7 @@ class SyncMixin(models.AbstractModel):
         return {
             "Content-Type": "application/json",
             "db": cfg["db"],
+            "login": self.env.user.external_user_login or "",
             "api-key": cfg["api_key"] or "",
         }
 
@@ -155,9 +156,20 @@ class SyncMixin(models.AbstractModel):
     def create(self, vals):
         record = super(SyncMixin, self).create(vals)
         if not record._sync_should_skip():
+            vals["external_id"] = record.id
+            vals["external_employee_id"] = record.env.user.employee_ids[:1].id if record.env.user.employee_ids else None
+            vals["external_employee_name"] = record.env.user.employee_ids[:1].name if record.env.user.employee_ids else None
+            vals["external_ref"] = record.id  # Ensure no external_ref is sent on create
+
             result = record._sync_call_remote("POST", self._name, vals)
             if result and "id" in result:
-                record.external_ref = result["id"]
+                # record.external_ref = result["id"]
+                record.with_context(from_remote_sync=True).write({
+                    "external_ref": result["id"],
+                    "external_id": result["id"],
+                    "external_employee_id": vals["external_employee_id"],
+                    "external_employee_name": vals["external_employee_name"],
+                })
         return record
 
     def write(self, vals):
