@@ -1,7 +1,7 @@
 import json
 import logging
 import math
-
+import odoo
 import psycopg2
 from html2text import html2text
 
@@ -414,7 +414,18 @@ class CustomEndpoint(models.Model):
 
     def change(self, kw_api, obj_id=False, **kw):
         self.ensure_one()
-        m = self.env[self.model_id.model].sudo()
+        db = request.httprequest.headers.get("db")
+        login = request.httprequest.headers.get("login")
+        user = False
+        remote_env = False
+        if db and login:
+            user = request.env['res.users'].sudo().search([
+                ('login', '=', login)], limit=1)
+            if user:
+                remote_env = odoo.api.Environment(
+                    request.env.cr, user.id, request.env.context)
+
+        m = remote_env[self.model_id.model].sudo()
         try:
             kw_api.data = json.loads(request.httprequest.data.decode('utf-8'))
         except Exception as e:
@@ -425,7 +436,7 @@ class CustomEndpoint(models.Model):
             return self.response(kw_api, obj_id, **kw)
         data = kw_api.get_data_fields_by_name(
             self.api_get_inbound_field_pairs(m))
-        data = self.env['kw.api.alien'].prepare_inbound_x2many_data(
+        data = remote_env['kw.api.alien'].prepare_inbound_x2many_data(
             self.model_id.model, data)
         try:
             if obj_id:

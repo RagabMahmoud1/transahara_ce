@@ -70,16 +70,6 @@ class CustomEndpointController(http.Controller):
                         "error": {"code": "403", "message": "Token expired"}
                     })
 
-        # if endpoint.is_token_required:
-        #     if not kw_api.token:
-        #         return KwApi().response(
-        #             code=403, error='403: Missed true token', data={'error': {
-        #                 'code': '403', 'message': '403: Missed true token'}}, )
-        #     if kw_api.token and kw_api.token.is_expired:
-        #         return KwApi().response(
-        #             code=403, error='403: Token is expired', data={'error': {
-        #                 'code': '403', 'message': '403: Token is expired'}}, )
-
         if request.httprequest.method == 'POST':
             if obj_id and not endpoint.is_update_enabled:
                 return KwApi().response(

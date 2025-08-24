@@ -51,12 +51,17 @@ class SyncMixin(models.AbstractModel):
             res = requests.post(url, json={
                 "login": login,
                 "password": password,
-            }, headers={"Content-Type": "application/json"})
+                "db": cfg["db"],
+            }, headers={
+                "Content-Type": "application/json",
+                "db": cfg["db"],
+            })
             if res.status_code in (200, 201):
                 data = res.json()
                 token = data.get("name") or data.get("refresh_token")
                 if token:
                     self.write({"external_token": token})
+                    user.external_token = token
                     return token
         except Exception as e:
             _logger.error("External login failed for %s: %s", self, e)
