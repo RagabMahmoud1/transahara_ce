@@ -4,6 +4,24 @@ from odoo import models, fields, api
 import logging
 _logger = logging.getLogger(__name__)
 
+class ResUsers(models.Model):
+    _inherit = "res.users"
+
+
+    external_employee_id = fields.Integer("External Employee ID")
+    external_employee_name = fields.Char("External Employee Name", copy=False)
+    external_user_id = fields.Integer("External User ID", copy=False)
+    external_user_password = fields.Char("External User Password", copy=False)
+    external_ref = fields.Integer("External Reference", related='external_user_id.id', copy=False, index=True)
+    external_id = fields.Integer("External ID", related='external_user_id.id')
+    external_user_name = fields.Char("External User Name", copy=False)
+    external_user_login = fields.Char("External Login")
+    external_token = fields.Char()
+    is_external_request = fields.Boolean("External Request")
+    is_external_request_create = fields.Boolean("External Request create")
+    is_external_request_write = fields.Boolean("External Request write")
+    is_external_request_unlink = fields.Boolean("External Request unlink")
+
 class SyncMixin(models.AbstractModel):
     _name = "sync.mixin"
     _description = "Remote Sync Mixin"
@@ -90,6 +108,55 @@ class SyncMixin(models.AbstractModel):
             "api-key": cfg["api_key"] or "",
         }
 
+    def _sync_related_field_mapping(self, field_name):
+        """ Map local record ID to external_ref for related fields """
+        field = self._fields.get(field_name)
+        model = self.env[field.comodel_name]
+        record = model.browse(self[field_name].id)
+
+        if record and hasattr(record, "external_ref"):
+            if record and record.external_ref:
+                return record.external_ref
+            else:
+                # sync it first to remote
+                return self._sync_related_field(record)
+        return self[field_name]
+
+    def _sync_related_field(self, record):
+        if record and record.id:
+            _rec_name_field = record._rec_name
+            dynamic_payload = {
+                "id": record.id,
+                "external_ref": record.external_ref,
+                _rec_name_field: record[_rec_name_field]
+            }
+            result = record._sync_call_remote("POST", record._name, dynamic_payload)
+            if result and "content" in result and "id" in result["content"]:
+                record.with_context(from_remote_sync=True).write({
+                    "external_ref": result["content"]["id"],
+                    "external_id": result["content"]["id"],
+                })
+                return result["content"]["id"]
+            else:
+                return None
+        else:
+            return None
+
+    def _prepare_payload_with_related_fields(self, payload):
+        """ Prepare payload by mapping related fields to their external references """
+        if not payload:
+            return payload
+
+        new_payload = payload.copy()
+
+
+        for field_name in payload.keys() :
+            # check if field is a related field to another model
+            if field_name in self._fields and self._fields[field_name].type == "many2one":
+                new_payload[field_name] = self._sync_related_field_mapping(field_name)
+
+        return new_payload
+
     def _sync_call_remote(self, method, model, payload=None, record_id=None):
         cfg = self._get_sync_config()
 
@@ -112,9 +179,14 @@ class SyncMixin(models.AbstractModel):
             if method == "GET":
                 res = requests.get(url, headers=headers, json=payload or {})
             elif method == "POST":
-                res = requests.post(url, headers=headers, json=payload or {})
+                new_payload = self._prepare_payload_with_related_fields(payload)
+                res = requests.post(url, headers=headers, json=new_payload or {})
             elif method == "PUT":
-                res = requests.post(url, headers=headers, json=payload or {})
+                # check fields that related to other models (dynamic)
+
+                new_payload = self._prepare_payload_with_related_fields(payload)
+
+                res = requests.post(url, headers=headers, json=new_payload or {})
             elif method == "DELETE":
                 res = requests.delete(url, headers=headers)
             else:

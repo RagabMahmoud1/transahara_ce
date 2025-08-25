@@ -10,7 +10,6 @@ from odoo import models, fields
 EXTS = [
     ('crm.lead', 'External Lead Ref'),
     ('res.partner', 'External Partner Ref'),
-    ('res.users', 'External User Ref'),
     ('crm.team', 'External Team Ref'),
     ('crm.stage', 'External Stage Ref'),
     ('utm.source', 'External UTM Source Ref'),
