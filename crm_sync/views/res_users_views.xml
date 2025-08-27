@@ -12,7 +12,7 @@
                         <field name="external_user_name" />
                         <field name="external_user_login" />
                         <field name="external_user_password" password="True" widget="password"/>
-                        <field name="external_employee_id" />
+                        <field name="external_employee_id2" />
                         <field name="external_employee_name" />
                         <field name="external_token" readonly="1"/>
                     </group>

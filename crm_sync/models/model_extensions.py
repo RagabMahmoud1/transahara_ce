@@ -25,7 +25,7 @@ for model_name, label in EXTS:
         '__module__': __name__,
         "external_ref": fields.Char("External Reference", copy=False, index=True),
         "external_id": fields.Integer("External ID", help="ID of the activity in the external system"),
-        "external_employee_id": fields.Many2one("res.users", "External Employee"),
+        "external_employee_id2": fields.Many2one("res.users", "External Employee"),
         "external_employee_name": fields.Char(string="External Employee Name", copy=False),
         "external_user_id": fields.Integer(string="External User ID", copy=False),
         "external_user_name": fields.Char(string="External User Name", copy=False),

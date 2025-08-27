@@ -11,6 +11,7 @@ EXTS = [
     ('crm.lead', 'External Lead Ref'),
     ('res.partner', 'External Partner Ref'),
     ('crm.team', 'External Team Ref'),
+    ('crm.team.member', 'External Team Member Ref'),
     ('crm.stage', 'External Stage Ref'),
     ('utm.source', 'External UTM Source Ref'),
     ('utm.campaign', 'External UTM Campaign Ref'),
@@ -20,8 +21,11 @@ EXTS = [
     ('res.country.state', 'External State Ref'),
     ('res.partner.industry', 'External Industry Ref'),
     ('mail.activity', 'External Activity Ref'),
+    ('mail.activity.type', 'External Activity Type Ref'),
     ('mail.message', 'External Message Ref'),
     ('crm.lost.reason', 'External Lost Reason Ref'),
+    ('res.partner.category', 'External Partner Category Ref'),
+    ('res.partner.title', 'External Partner Title Ref'),
 ]
 
 
@@ -35,9 +39,9 @@ def extend_sync_models():
                 "_name": model_name,  # keep original
                 "__module__": __name__,
                 # Optionally override field label
-                "external_ref": fields.Char("External Reference", copy=False, index=True),
+                "external_ref": fields.Integer("External Reference", copy=False, index=True),
                 "external_id": fields.Integer("External ID", help="ID of the activity in the external system"),
-                "external_employee_id": fields.Many2one("res.users", "External Employee"),
+                "external_employee_id2": fields.Integer("External Employee"),
                 "external_employee_name": fields.Char(string="External Employee Name", copy=False),
                 "external_user_id": fields.Integer(string="External User ID", copy=False),
                 "external_user_name": fields.Char(string="External User Name", copy=False),

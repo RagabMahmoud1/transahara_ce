@@ -549,7 +549,7 @@ class CustomEndpointField(models.Model):
     eval_source = fields.Text(
         default='\n\n\n\n\n\n\n', )
     relation_display = fields.Selection(
-        defalut='data_endpoint',
+        default='data_endpoint',
         selection=[('pure_id', 'Pure ID'), ('id_only', 'Only ID'),
                    ('id_name', 'ID & name'), ('id_date', 'ID & write_date'),
                    ('id_name_date', 'ID, name & write_date'),

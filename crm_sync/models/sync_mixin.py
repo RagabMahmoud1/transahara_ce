@@ -8,12 +8,12 @@ class ResUsers(models.Model):
     _inherit = "res.users"
 
 
-    external_employee_id = fields.Integer("External Employee ID")
+    external_employee_id2 = fields.Integer("External Employee ID")
     external_employee_name = fields.Char("External Employee Name", copy=False)
     external_user_id = fields.Integer("External User ID", copy=False)
     external_user_password = fields.Char("External User Password", copy=False)
-    external_ref = fields.Integer("External Reference", related='external_user_id.id', copy=False, index=True)
-    external_id = fields.Integer("External ID", related='external_user_id.id')
+    external_ref = fields.Integer("External Reference", related='external_user_id', copy=False, index=True)
+    external_id = fields.Integer("External ID", related='external_user_id')
     external_user_name = fields.Char("External User Name", copy=False)
     external_user_login = fields.Char("External Login")
     external_token = fields.Char()
@@ -28,7 +28,7 @@ class SyncMixin(models.AbstractModel):
 
     external_ref = fields.Integer("External Reference", copy=False, index=True)
     external_id = fields.Integer("External ID")
-    external_employee_id = fields.Integer("External Employee ID")
+    external_employee_id2 = fields.Integer("External Employee ID")
     external_employee_name = fields.Char("External Employee Name", copy=False)
     external_user_id = fields.Integer("External User ID", copy=False)
     external_user_password = fields.Char("External User Password", copy=False)
@@ -229,7 +229,7 @@ class SyncMixin(models.AbstractModel):
         record = super(SyncMixin, self).create(vals)
         if not record._sync_should_skip():
             vals["external_id"] = record.id
-            vals["external_employee_id"] = record.env.user.employee_ids[:1].id if record.env.user.employee_ids else None
+            vals["external_employee_id2"] = record.env.user.employee_ids[:1].id if record.env.user.employee_ids else None
             vals["external_employee_name"] = record.env.user.employee_ids[:1].name if record.env.user.employee_ids else None
             vals["external_ref"] = record.id  # Ensure no external_ref is sent on create
 
@@ -239,7 +239,7 @@ class SyncMixin(models.AbstractModel):
                 record.with_context(from_remote_sync=True).write({
                     "external_ref": result["content"]["id"],
                     "external_id": result["content"]["id"],
-                    "external_employee_id": vals["external_employee_id"],
+                    "external_employee_id2": vals["external_employee_id2"],
                     "external_employee_name": vals["external_employee_name"],
                 })
         return record
