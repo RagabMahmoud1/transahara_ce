@@ -233,6 +233,8 @@ class SyncMixin(models.AbstractModel):
             vals["external_employee_id2"] = record.env.user.employee_ids[:1].id if record.env.user.employee_ids else None
             vals["external_employee_name"] = record.env.user.employee_ids[:1].name if record.env.user.employee_ids else None
             vals["external_ref"] = record.id  # Ensure no external_ref is sent on create
+            vals["external_user_id"] = record.env.user.id
+            vals["external_user_name"] = record.env.user.name
 
             result = record._sync_call_remote("POST", self._name, vals)
             if result and "content" in result and "id" in result["content"]:

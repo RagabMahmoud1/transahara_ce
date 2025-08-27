@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        add external fields
+            [
+                "external_ref": fields.Integer("External Reference", copy=False, index=True),
+                "external_id": fields.Integer("External ID", help="ID of the activity in the external system"),
+                "external_employee_id2": fields.Integer("External Employee"),
+                "external_employee_name": fields.Char(string="External Employee Name", copy=False),
+                "external_user_id": fields.Integer(string="External User ID", copy=False),
+                "external_user_name": fields.Char(string="External User Name", copy=False),
+            ]
+        to views forms and trees
+
+        for models [
+            ('crm.lead', 'External Lead Ref'),
+            ('res.partner', 'External Partner Ref'),
+            ('crm.team', 'External Team Ref'),
+            ('crm.team.member', 'External Team Member Ref'),
+            ('crm.stage', 'External Stage Ref'),
+            ('utm.source', 'External UTM Source Ref'),
+            ('utm.campaign', 'External UTM Campaign Ref'),
+            ('utm.medium', 'External UTM Medium Ref'),
+            ('crm.tag', 'External Tag Ref'),
+            ('res.country', 'External Country Ref'),
+            ('res.country.state', 'External State Ref'),
+            ('res.partner.industry', 'External Industry Ref'),
+            ('mail.activity', 'Extee external system"),
+                    "external_employee_id2": fields.Integer("External Employee"),
+                    "external_employee_name": fields.Char(string="External Employee Name", copy=False),
+                    "external_user_id": fields.Integer(string="External User ID", copy=False),
+                    "external_user_name": fields.Char(string="External User Name", copy=False),rnal Activity Ref'),
+            ('mail.activity.type', 'External Activity Type Ref'),
+            ('mail.message', 'External Message Ref'),
+            ('crm.lost.reason', 'External Lost Reason Ref'),
+            ('res.partner.category', 'External Partner Category Ref'),
+            ('res.partner.title', 'External Partner Title Ref'),
+        ]
+    -->
+
+
+    <!--    crm.lead form view -->
+    <record id="view_crm_lead_form_inherit_external" model="ir.ui.view">
+        <field name="name">view.crm.lead.form.inherit.external</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page>
+                    <group>
+                        <field name="external_ref"/>
+                        <field name="external_id"/>
+                        <field name="external_employee_id2"/>
+                        <field name="external_employee_name"/>
+                        <field name="external_user_id"/>
+                        <field name="external_user_name"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!--    crm.lead tree view -->
+    <record id="view_crm_lead_tree_inherit_external" model="ir.ui.view">
+        <field name="name">view.crm.lead.tree.inherit.external</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="inside">
+                <field name="external_ref" optional="hide"/>
+                <field name="external_id" optional="hide"/>
+                <field name="external_employee_id2" optional="hide"/>
+                <field name="external_employee_name" optional="hide"/>
+                <field name="external_user_id" optional="hide"/>
+                <field name="external_user_name" optional="hide"/>
+
+            </xpath>
+        </field>
+    </record>
+
+    <!--    res.partner form view -->
+    <record id="view_res_partner_form_inherit_external" model="ir.ui.view">
+        <field name="name">view.res.partner.form.inherit.external</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="External References">
+                    <group>
+                        <field name="external_ref"/>
+                        <field name="external_id"/>
+                        <field name="external_employee_id2"/>
+                        <field name="external_employee_name"/>
+                        <field name="external_user_id"/>
+                        <field name="external_user_name"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!--    res.partner tree view -->
+    <record id="view_res_partner_tree_inherit_external" model="ir.ui.view">
+        <field name="name">view.res.partner.tree.inherit.external</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="inside">
+                <field name="external_ref" optional="hide"/>
+                <field name="external_id" optional="hide"/>
+                <field name="external_employee_id2" optional="hide"/>
+                <field name="external_employee_name" optional="hide"/>
+                <field name="external_user_id" optional="hide"/>
+                <field name="external_user_name" optional="hide"/>
+
+            </xpath>
+        </field>
+    </record>
+
+    <!--    &lt;!&ndash;    crm.team form view &ndash;&gt;-->
+    <!--    <record id="view_crm_team_form_inherit_external" model="ir.ui.view">-->
+    <!--        <field name="name">view.crm.team.form.inherit.external</field>-->
+    <!--        <field name="model">crm.team</field>-->
+    <!--        <field name="inherit_id" ref="sales_team.crm_team_view_form"/>-->
+    <!--        <field name="arch" type="xml">-->
+    <!--            <xpath expr="//sheet//group[1]" position="inside">-->
+    <!--                <group>-->
+    <!--                    <field name="external_ref"/>-->
+    <!--                    <field name="external_id"/>-->
+    <!--                    <field name="external_employee_id2"/>-->
+    <!--                    <field name="external_employee_name"/>-->
+    <!--                    <field name="external_user_id"/>-->
+    <!--                    <field name="external_user_name"/>-->
+    <!--                </group>-->
+    <!--            </xpath>-->
+    <!--        </field>-->
+    <!--    </record>-->
+
+    <!--    &lt;!&ndash;    crm.team tree view &ndash;&gt;-->
+    <!--    <record id="view_crm_team_tree_inherit_external" model="ir.ui.view">-->
+    <!--        <field name="name">view.crm.team.tree.inherit.external</field>-->
+    <!--        <field name="model">crm.team</field>-->
+    <!--        <field name="inherit_id" ref="sales_team.crm_team_view_tree"/>-->
+    <!--        <field name="arch" type="xml">-->
+    <!--            <xpath expr="//tree" position="inside">-->
+    <!--                <field name="external_ref"/>-->
+    <!--            </xpath>-->
+    <!--        </field>-->
+    <!--    </record>-->
+
+
+</odoo>
