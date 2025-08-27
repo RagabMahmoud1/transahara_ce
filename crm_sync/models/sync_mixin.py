@@ -120,7 +120,7 @@ class SyncMixin(models.AbstractModel):
             else:
                 # sync it first to remote
                 return self._sync_related_field(record)
-        return self[field_name]
+        return False
 
     def _sync_related_field(self, record):
         if record and record.id:
@@ -153,8 +153,9 @@ class SyncMixin(models.AbstractModel):
         for field_name in payload.keys() :
             # check if field is a related field to another model
             if field_name in self._fields and self._fields[field_name].type == "many2one":
-                new_payload[field_name] = self._sync_related_field_mapping(field_name)
-
+                new_id = self._sync_related_field_mapping(field_name)
+                if new_id:
+                    new_payload[field_name] = new_id
         return new_payload
 
     def _sync_call_remote(self, method, model, payload=None, record_id=None):

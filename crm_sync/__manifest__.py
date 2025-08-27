@@ -1,6 +1,6 @@
 {
     'name': 'CRM Synchronization',
-    'version': '16.6',
+    'version': '16.5',
     'summary': 'Sync CRM leads between Odoo Community and Enterprise',
     'description': 'Bidirectional synchronization of CRM leads between two Odoo instances',
     'author': 'Marwah Adel',

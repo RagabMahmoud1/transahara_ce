@@ -327,7 +327,7 @@ class CustomEndpoint(models.Model):
                 'number': kw_api.page_index,
                 'last': (total_pages - kw_api.page_index) <= 0,
                 "external_employee_name": user.external_employee_name if user else None,
-                "external_employee_id": user.external_employee_id if user else None,
+                "external_employee_id2": user.external_employee_id2 if user else None,
             }
         else:
             data = {'content': data, 'code': '200'}
