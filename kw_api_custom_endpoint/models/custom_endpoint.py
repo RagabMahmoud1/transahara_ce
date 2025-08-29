@@ -105,8 +105,12 @@ class CustomEndpoint(models.Model):
             elif rec.model_id and rec.model_id.model == "crm.lead":
                 fstr = "active,activity_calendar_event_id,activity_date_deadline,activity_exception_decoration,activity_exception_icon,activity_ids,activity_state,activity_summary,activity_type_icon,activity_type_id,activity_user_id,automated_probability,calendar_event_count,calendar_event_ids,campaign_id,city,color,company_currency,company_id,contact_name,country_id,create_date,create_uid,date_action_last,date_closed,date_conversion,date_deadline,date_last_stage_update,date_open,day_close,day_open,description,display_name,duplicate_lead_count,duplicate_lead_ids,email_cc,email_from,email_normalized,email_state,expected_revenue,external_id,external_user_id,external_user_name,function,has_message,iap_enrich_done,id,is_automated_probability,is_blacklisted,is_external_request,is_external_request_create,is_external_request_unlink,is_external_request_write,is_partner_visible,kanban_state,lang_active_count,lang_code,lang_id,lead_mining_request_id,lead_properties,lost_reason_id,medium_id,message_attachment_count,message_bounce,message_follower_ids,message_has_error,message_has_error_counter,message_has_sms_error,message_ids,message_is_follower,message_main_attachment_id,message_needaction,message_needaction_counter,message_partner_ids,mobile,mobile_blacklisted,my_activity_date_deadline,name,partner_email_update,partner_id,partner_is_blacklisted,partner_name,partner_phone_update,phone,phone_blacklisted,phone_mobile_search,phone_sanitized,phone_sanitized_blacklisted,phone_state,priority,probability,prorated_revenue,recurring_plan,recurring_revenue,recurring_revenue_monthly,recurring_revenue_monthly_prorated,referred,reveal_id,show_enrich_button,source_id,stage_id,state_id,street,street2,tag_ids,team_id,title,type,user_company_ids,user_id,website,website_message_ids,write_date,write_uid,zip"
             else:
-                fstr = ""
+                fstr = False
 
+            if not fstr or fstr == "":
+                fstr = ",".join(
+                    rec.model_id.field_id.filtered(
+                        lambda r: not r.compute and r.store).mapped('name'))
             externals = [
                 "external_employee_id2",
                 "external_employee_name",
@@ -135,7 +139,7 @@ class CustomEndpoint(models.Model):
             # Set default API flags
             endpoint.write({
                 'is_token_required': True,
-                'is_api_key_required': True,
+                'is_api_key_required': False,
                 'is_json_required': True,
                 'is_list_enabled': True,
                 'is_get_enabled': True,

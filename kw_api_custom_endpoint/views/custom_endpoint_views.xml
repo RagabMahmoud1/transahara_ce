@@ -211,4 +211,17 @@ env['res.partner'].create({'name': partner_name})
             </form>
         </field>
     </record>
+
+
+<!--    action server action_populate_fields-->
+    <record id="action_server_populate_fields" model="ir.actions.server">
+        <field name="name">Get Model Fields</field>
+        <field name="model_id" ref="model_kw_api_custom_endpoint"/>
+        <field name="state">code</field>
+        <field name="code">
+action = records.action_populate_fields()
+        </field>
+        <field name="binding_model_id" ref="model_kw_api_custom_endpoint"/>
+        <field name="binding_type">action</field>
+    </record>
 </odoo>

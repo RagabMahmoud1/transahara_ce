@@ -252,6 +252,9 @@ class SyncMixin(models.AbstractModel):
         if not self._sync_should_skip():
             for rec in self:
                 if rec.external_ref:
+                    vals["external_id"] = rec.id
+                    vals["external_ref"] = rec.id
+
                     rec._sync_call_remote("PUT", self._name, vals, record_id=rec.external_ref)
         return res
 
