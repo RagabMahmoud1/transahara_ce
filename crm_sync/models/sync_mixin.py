@@ -279,6 +279,7 @@ class SyncMixin(models.AbstractModel):
                     if related_record and hasattr(related_record, 'external_ref'):
                         if related_record.external_ref:
                             vals['res_id'] = related_record.external_ref
+                            vals['res_model'] = related_model
 
             if self._name == 'mail.message':
                 # Special handling for mail.message to avoid sending body as None
