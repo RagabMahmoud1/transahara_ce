@@ -221,6 +221,7 @@ env['res.partner'].create({'name': partner_name})
         <field name="code">
 action = records.action_populate_fields()
         </field>
+<!--        bind-->
         <field name="binding_model_id" ref="model_kw_api_custom_endpoint"/>
         <field name="binding_type">action</field>
     </record>
