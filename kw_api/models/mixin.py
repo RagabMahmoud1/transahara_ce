@@ -142,23 +142,74 @@ class ApiAlien(models.AbstractModel):
         m = self.env[model_name].sudo()
         if hasattr(m, 'prepare_inbound_x2many_data'):
             return m.prepare_inbound_x2many_data(data, **kw)
-        for x in data.keys():
-            if m._fields[x].type in ['many2many', 'one2many', ]:
-                data[x] = self.prepare_inbound_x2many_field(
-                    model_name, x, data[x], **kw)
+
+        # Ensure data is a dictionary
+        if not isinstance(data, dict):
+            _logger.error(f"Invalid data format for {model_name}: expected dict, got {type(data)}")
+            return data
+
+        for field_name in list(data.keys()):
+            # Check if field exists and is x2many
+            if field_name in m._fields and m._fields[field_name].type in ['many2many', 'one2many']:
+                data[field_name] = self.prepare_inbound_x2many_field(
+                    m._fields[field_name].comodel_name, field_name, data[field_name], parent_model=model_name, **kw)
+            else:
+                _logger.warning(
+                    f"Field {field_name} is not a many2many or one2many field in {model_name} or does not exist")
+                # data.pop(field_name, None)  # Remove invalid field to avoid errors
         return data
 
-    def prepare_inbound_x2many_field(
-            self, model_name, field_name, data, **kw):
+    def prepare_inbound_x2many_field(self, model_name, field_name, data, **kw):
         m = self.env[model_name].sudo()
         if hasattr(m, 'prepare_inbound_x2many_field'):
             return m.prepare_inbound_x2many_field(data, **kw)
+
+        # Get parent model and field type
+        parent_model = kw.get('parent_model', self._name)
+        if parent_model not in self.env or field_name not in self.env[parent_model]._fields:
+            _logger.error(f"Field {field_name} does not exist in model {parent_model}")
+            return []  # Return empty list to skip invalid field
+
+        field_type = self.env[parent_model]._fields[field_name].type
+
         res = []
-        for line in data:
-            if 'id' in line.keys():
-                res.append((4, line['id'], ))
-            else:
-                res.append((0, 0, line))
+        if field_type == 'many2many':
+            # Handle many2many: replace or link records
+            if isinstance(data, (list, tuple)) and len(data) == 1 and isinstance(data[0], (list, tuple)) and len(
+                    data[0]) == 3 and data[0][0] == 6:
+                # Direct [6, 0, [ids]] command: return as is
+                return data
+            new_ids = []
+            for line in data:
+                if isinstance(line, dict) and 'id' in line:
+                    # Link existing record by ID
+                    new_ids.append(line['id'])
+                elif isinstance(line, (int, str)):
+                    # Direct ID input
+                    new_ids.append(int(line))
+                elif isinstance(line, (list, tuple)) and len(line) == 3 and line[0] == 6:
+                    # Extract IDs from [6, 0, [ids]]
+                    new_ids.extend(line[2])
+                else:
+                    _logger.warning(f"Invalid data format for many2many field {field_name}: {line}")
+                    continue
+            # Return replace command for many2many
+            return [(6, 0, new_ids)]
+
+        elif field_type == 'one2many':
+            # Handle one2many: create or update records
+            for line in data:
+                if isinstance(line, dict):
+                    if 'id' in line:
+                        # Update existing record
+                        res.append((1, line['id'], {k: v for k, v in line.items() if k != 'id'}))
+                    else:
+                        # Create new record
+                        res.append((0, 0, line))
+                else:
+                    _logger.warning(f"Invalid data format for one2many field {field_name}: {line}")
+                    continue
+
         return res
 
 

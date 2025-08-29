@@ -2,11 +2,12 @@
 import requests
 from odoo import models, fields, api
 import logging
+
 _logger = logging.getLogger(__name__)
+
 
 class ResUsers(models.Model):
     _inherit = "res.users"
-
 
     external_employee_id2 = fields.Integer("External Employee ID")
     external_employee_name = fields.Char("External Employee Name", copy=False)
@@ -21,6 +22,7 @@ class ResUsers(models.Model):
     is_external_request_create = fields.Boolean("External Request create")
     is_external_request_write = fields.Boolean("External Request write")
     is_external_request_unlink = fields.Boolean("External Request unlink")
+
 
 class SyncMixin(models.AbstractModel):
     _name = "sync.mixin"
@@ -149,13 +151,31 @@ class SyncMixin(models.AbstractModel):
 
         new_payload = payload.copy()
 
-
-        for field_name in payload.keys() :
+        for field_name in payload.keys():
             # check if field is a related field to another model
             if field_name in self._fields and self._fields[field_name].type == "many2one":
                 new_id = self._sync_related_field_mapping(field_name)
                 if new_id:
                     new_payload[field_name] = new_id
+            # Many2Many
+            elif field_name in self._fields and self._fields[field_name].type == "many2many":
+                related_ids = payload[field_name]
+                if isinstance(related_ids, list):
+                    new_related_ids = []
+                    for rid in related_ids[0][2]:
+                        if isinstance(rid, int):
+                            related_record = self.env[self._fields[field_name].comodel_name].browse(rid)
+                            """        
+                            if record and hasattr(record, "external_ref"):
+                                if record and record.external_ref:
+                                    return record.external_ref"""
+                            if related_record and related_record.external_ref:
+                                new_related_ids.append(related_record.external_ref)
+                            else:
+                                new_related_ids.append(self._sync_related_field(related_record))
+
+
+                    new_payload[field_name] = [(6, 0, new_related_ids)]
         return new_payload
 
     def _sync_call_remote(self, method, model, payload=None, record_id=None):
@@ -169,10 +189,10 @@ class SyncMixin(models.AbstractModel):
             url += f"/{record_id}"
 
         # Always ensure valid token
-        token = self._get_token()
-        headers = self._sync_headers()
+        token = self[0]._get_token()
+        headers = self[0]._sync_headers()
         if not token:
-            token = self._login_external_user()
+            token = self[0]._login_external_user()
         if token:
             headers["Authorization"] = f"Bearer {token}"
 
@@ -230,8 +250,10 @@ class SyncMixin(models.AbstractModel):
         record = super(SyncMixin, self).create(vals)
         if not record._sync_should_skip():
             vals["external_id"] = record.id
-            vals["external_employee_id2"] = record.env.user.employee_ids[:1].id if record.env.user.employee_ids else None
-            vals["external_employee_name"] = record.env.user.employee_ids[:1].name if record.env.user.employee_ids else None
+            vals["external_employee_id2"] = record.env.user.employee_ids[
+                                            :1].id if record.env.user.employee_ids else None
+            vals["external_employee_name"] = record.env.user.employee_ids[
+                                             :1].name if record.env.user.employee_ids else None
             vals["external_ref"] = record.id  # Ensure no external_ref is sent on create
             vals["external_user_id"] = record.env.user.id
             vals["external_user_name"] = record.env.user.name
