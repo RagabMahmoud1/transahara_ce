@@ -161,6 +161,9 @@ class SyncMixin(models.AbstractModel):
             elif field_name in self._fields and self._fields[field_name].type == "many2many":
                 related_ids = payload[field_name]
                 if isinstance(related_ids, list):
+                    if len(related_ids) == 0:
+                        new_payload[field_name] = [(6, 0, [])]
+                        continue
                     new_related_ids = []
                     for rid in related_ids[0][2]:
                         if isinstance(rid, int):
@@ -247,6 +250,11 @@ class SyncMixin(models.AbstractModel):
     # --- CRUD Hooks ---
     @api.model_create_single
     def create(self, vals):
+        if self._name == 'mail.activity' and 'res_model' in vals:
+            res_model = vals.get('res_model')
+            res_model_id = self.env['ir.model'].search([('model', '=', res_model)], limit=1).id if res_model else None
+            vals['res_model_id'] = res_model_id
+
         record = super(SyncMixin, self).create(vals)
         if not record._sync_should_skip():
             vals["external_id"] = record.id
@@ -257,6 +265,31 @@ class SyncMixin(models.AbstractModel):
             vals["external_ref"] = record.id  # Ensure no external_ref is sent on create
             vals["external_user_id"] = record.env.user.id
             vals["external_user_name"] = record.env.user.name
+
+            res_id = None
+            related_model = None
+            if self._name == 'mail.activity':
+                # Special handling for mail.activity to avoid sending body as None
+                res_id = vals.get('res_id')
+                if res_id:
+                    related_model_id = vals.get('res_model_id')
+                    related_model = self.env['ir.model'].browse(related_model_id).model
+                    related_record = self.env[related_model].browse(res_id)
+                    # external ref of related record
+                    if related_record and hasattr(related_record, 'external_ref'):
+                        if related_record.external_ref:
+                            vals['res_id'] = related_record.external_ref
+
+            if self._name == 'mail.message':
+                # Special handling for mail.message to avoid sending body as None
+                res_id = vals.get('res_id')
+                if res_id:
+                    related_model = vals.get('model')
+                    related_record = self.env[related_model].browse(res_id)
+                    # external ref of related record
+                    if related_record and hasattr(related_record, 'external_ref'):
+                        if related_record.external_ref:
+                            vals['res_id'] = related_record.external_ref
 
             result = record._sync_call_remote("POST", self._name, vals)
             if result and "content" in result and "id" in result["content"]:
