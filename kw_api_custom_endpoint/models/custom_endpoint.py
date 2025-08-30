@@ -7,6 +7,7 @@ from html2text import html2text
 
 from odoo import models, fields, api, _, SUPERUSER_ID
 from odoo.exceptions import UserError
+from odoo.fields import Datetime
 from odoo.http import request
 from odoo.osv.expression import AND
 from odoo.tools import format_datetime
@@ -498,6 +499,8 @@ class CustomEndpoint(models.Model):
             self.api_get_inbound_field_pairs(m))
         data = remote_env['kw.api.alien'].prepare_inbound_x2many_data(
             self.model_id.model, data)
+
+
         try:
             if obj_id:
                 obj_id = m.search(
@@ -505,14 +508,18 @@ class CustomEndpoint(models.Model):
                 obj_id.with_context(from_remote_sync=True).write(data)
             else:
                 domain = []
-                if 'id' in data:
-                    domain = [('id', '=', data['id'])]
-
-                if 'external_ref' in data:
-                    domain += [('external_ref', '=', data['external_ref'])]
-
-                if 'name' in data:
-                    domain += [('name', '=', data['name'])]
+                conditions = []
+                if 'id' in kw_api.data:
+                    conditions.append(('id', '=', kw_api.data['id']))
+                if 'external_ref' in kw_api.data:
+                    conditions.append(('external_ref', '=', kw_api.data['external_ref']))
+                if 'name' in kw_api.data:
+                    conditions.append(('name', '=', kw_api.data['name']))
+                for i, condition in enumerate(conditions):
+                    if i == 0:
+                        domain.append(condition)
+                    else:
+                        domain = ['|'] + [condition] + domain
 
                 obj_id = m.search(
                     domain, limit=1)
