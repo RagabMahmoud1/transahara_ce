@@ -49,9 +49,19 @@ class SyncMixin(models.AbstractModel):
     # -------------------------------
     def _get_token(self):
         """Ensure we have a valid token, else login again."""
-        self.ensure_one()
-        if self.external_token:
-            return self.external_token
+        if self:
+            try:
+                self.ensure_one()
+                if self.external_token:
+                    return self.external_token
+            except Exception:
+                token = self.env.user.external_token
+                if token:
+                    return token
+        else:
+            token = self.env.user.external_token
+            if token:
+                return token
 
         # No token or invalid -> re-login
         return self._login_external_user()
