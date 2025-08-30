@@ -92,7 +92,11 @@ class SyncMixin(models.AbstractModel):
 
     # --- Config + Utils ---
     def _sync_should_skip(self):
-        return self.env.context.get("from_remote_sync")
+        db_sync_enabled = self._get_sync_config().get("enabled", False)
+        from_remote_sync = self.env.context.get("from_remote_sync")
+        if db_sync_enabled and not from_remote_sync:
+            return False
+        return True
 
     def _get_sync_config(self):
         params = self.env['ir.config_parameter'].sudo()
