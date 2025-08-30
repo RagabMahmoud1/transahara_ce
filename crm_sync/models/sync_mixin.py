@@ -128,8 +128,8 @@ class SyncMixin(models.AbstractModel):
         if record and record.id:
             _rec_name_field = record._rec_name
             dynamic_payload = {
-                "id": record.id,
-                "external_ref": record.external_ref,
+                "id": record.external_ref,
+                "external_ref": record.id,
                 _rec_name_field: record[_rec_name_field]
             }
             result = record._sync_call_remote("POST", record._name, dynamic_payload)

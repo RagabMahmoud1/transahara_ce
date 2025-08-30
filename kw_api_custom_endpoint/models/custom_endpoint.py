@@ -504,6 +504,23 @@ class CustomEndpoint(models.Model):
                     [(self.model_id_field, '=', obj_id)], limit=1)
                 obj_id.with_context(from_remote_sync=True).write(data)
             else:
+                domain = []
+                if 'id' in data:
+                    domain = [('id', '=', data['id'])]
+
+                if 'external_ref' in data:
+                    domain += [('external_ref', '=', data['external_ref'])]
+
+                if 'name' in data:
+                    domain += [('name', '=', data['name'])]
+
+                obj_id = m.search(
+                    domain, limit=1)
+                if obj_id:
+                    obj_id.with_context(from_remote_sync=True).write(data)
+                    kw_api.paginate = False
+                    res_data = self.data_response(kw_api, obj_id, user=user)
+                    return res_data
                 obj_id = m.with_context(from_remote_sync=True).create(data)
         except psycopg2.IntegrityError as e:
             self._cr.rollback()
