@@ -499,8 +499,6 @@ class CustomEndpoint(models.Model):
             self.api_get_inbound_field_pairs(m))
         data = remote_env['kw.api.alien'].prepare_inbound_x2many_data(
             self.model_id.model, data)
-
-
         try:
             if obj_id:
                 obj_id = m.search(

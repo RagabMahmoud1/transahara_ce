@@ -1,4 +1,6 @@
 # models/sync_mixin.py
+import datetime
+
 import requests
 from odoo import models, fields, api
 import logging
@@ -181,6 +183,11 @@ class SyncMixin(models.AbstractModel):
                     new_payload[field_name] = [(6, 0, new_related_ids)]
         return new_payload
 
+    def serialize_value(self, field, value):
+        if self._fields[field].type in ["datetime", "date"]:
+            return str(value)  # Converts datetime/date to string (e.g., '2025-08-30 08:32:48')
+        return value
+
     def _sync_call_remote(self, method, model, payload=None, record_id=None):
         cfg = self._get_sync_config()
 
@@ -209,6 +216,9 @@ class SyncMixin(models.AbstractModel):
                 # check fields that related to other models (dynamic)
 
                 new_payload = self._prepare_payload_with_related_fields(payload)
+
+                for field in new_payload:
+                    new_payload[field] = self.serialize_value(field, new_payload[field])
 
                 res = requests.post(url, headers=headers, json=new_payload or {})
             elif method == "DELETE":
@@ -301,6 +311,8 @@ class SyncMixin(models.AbstractModel):
                     "external_employee_id2": vals["external_employee_id2"],
                     "external_employee_name": vals["external_employee_name"],
                 })
+        else:
+            _logger.info("Skipping sync for %s due to context", record)
         return record
 
     def write(self, vals):
@@ -311,7 +323,10 @@ class SyncMixin(models.AbstractModel):
                     vals["external_id"] = rec.id
                     vals["external_ref"] = rec.id
 
-                    rec._sync_call_remote("PUT", self._name, vals, record_id=rec.external_ref)
+                    write_res = rec._sync_call_remote("PUT", self._name, vals, record_id=rec.external_ref)
+
+        else:
+            _logger.info("Skipping sync for %s due to context", self)
         return res
 
     def unlink(self):
